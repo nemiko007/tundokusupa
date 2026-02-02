@@ -106,21 +106,41 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 	var results []map[string]interface{}
 	json.Unmarshal(resp, &results)
 
+	var internalID string
 	if len(results) == 0 {
 		newUser := map[string]interface{}{
 			"line_user_id": req.LineUserID,
 			"display_name": "LINE User",
 		}
-		_, _, err = supabaseClient.From("users").Insert(newUser, false, "", "", "").Execute()
+		// Insert returns the inserted record by default in many postgrest configurations
+		insertResp, _, err := supabaseClient.From("users").Insert(newUser, false, "", "", "").Execute()
 		if err != nil {
 			log.Printf("[ERROR] handleLineAuth insert error: %v", err)
 			http.Error(w, fmt.Sprintf("failed to create user: %v", err), http.StatusInternalServerError)
 			return
 		}
+		var insertResults []map[string]interface{}
+		json.Unmarshal(insertResp, &insertResults)
+		if len(insertResults) > 0 {
+			internalID = insertResults[0]["id"].(string)
+		} else {
+			// If insertion didn't return data, fetch it again (safety fallback)
+			fResp, _, _ := supabaseClient.From("users").Select("id", "exact", false).Eq("line_user_id", req.LineUserID).Execute()
+			var fResults []map[string]interface{}
+			json.Unmarshal(fResp, &fResults)
+			if len(fResults) > 0 {
+				internalID = fResults[0]["id"].(string)
+			}
+		}
+	} else {
+		internalID = results[0]["id"].(string)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Auth pre-check successful"})
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Auth successful",
+		"userId":  internalID,
+	})
 }
 
 func handleBooks(w http.ResponseWriter, r *http.Request) {
