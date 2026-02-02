@@ -97,6 +97,7 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 
 	resp, _, err := supabaseClient.From("users").Select("*", "exact", false).Eq("line_user_id", req.LineUserID).Execute()
 	if err != nil {
+		log.Printf("[ERROR] handleLineAuth query error: %v", err)
 		http.Error(w, fmt.Sprintf("failed to query user: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -111,6 +112,7 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 		}
 		_, _, err = supabaseClient.From("users").Insert(newUser, false, "", "", "").Execute()
 		if err != nil {
+			log.Printf("[ERROR] handleLineAuth insert error: %v", err)
 			http.Error(w, fmt.Sprintf("failed to create user: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -144,6 +146,7 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 
 	resp, _, err := supabaseClient.From("books").Select("*", "exact", false).Eq("user_id", userId).Execute()
 	if err != nil {
+		log.Printf("[ERROR] handleGetBooks error: %v", err)
 		http.Error(w, fmt.Sprintf("failed to fetch books: %v", err), http.StatusInternalServerError)
 		return
 	}
