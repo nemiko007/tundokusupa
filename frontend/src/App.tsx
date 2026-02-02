@@ -15,9 +15,9 @@ interface Book {
     author: string;
     deadline: string; // ISO String
     status: string;
-    insultLevel: number;
-    userId: string;
-    bookId: string;
+    insult_level: number;
+    user_id: string;
+    book_id: string;
 }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://tundoku-killer.onrender.com"; // 必要に応じて環境変数化
@@ -130,10 +130,10 @@ function App() {
                 title,
                 author,
                 deadline: new Date(deadline).toISOString(),
-                insultLevel: Number(insultLevel),
-                userId: supabaseUser.uid,
-                bookId: editingBookId || "",
-                status: (editingBookId ? books.find(b => b.bookId === editingBookId)?.status : "unread") || "unread"
+                insult_level: Number(insultLevel),
+                user_id: supabaseUser.uid,
+                book_id: editingBookId || "",
+                status: (editingBookId ? books.find(b => b.book_id === editingBookId)?.status : "unread") || "unread"
             };
 
             const method = editingBookId ? "PUT" : "POST";
@@ -165,11 +165,11 @@ function App() {
     };
 
     const handleEditClick = (book: Book) => {
-        setEditingBookId(book.bookId);
+        setEditingBookId(book.book_id);
         setTitle(book.title);
         setAuthor(book.author);
         setDeadline(book.deadline.split('T')[0]);
-        setInsultLevel(book.insultLevel);
+        setInsultLevel(book.insult_level);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -180,11 +180,11 @@ function App() {
             const response = await fetch(`${BACKEND_URL}/api/books`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bookId, userId: supabaseUser.uid }),
+                body: JSON.stringify({ book_id: bookId, user_id: supabaseUser.uid }),
             });
 
             if (response.ok) {
-                setBooks(prev => prev.filter(b => b.bookId !== bookId));
+                setBooks(prev => prev.filter(b => b.book_id !== bookId));
                 alert("削除したよ！✨");
             }
         } catch (err) {
@@ -197,11 +197,11 @@ function App() {
             const response = await fetch(`${BACKEND_URL}/api/books/complete`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bookId }),
+                body: JSON.stringify({ book_id: bookId }),
             });
 
             if (response.ok) {
-                setBooks(prev => prev.map(b => b.bookId === bookId ? { ...b, status: "completed" } : b));
+                setBooks(prev => prev.map(b => b.book_id === bookId ? { ...b, status: "completed" } : b));
             }
         } catch (err) {
             console.error("読了処理エラー:", err);
@@ -267,15 +267,15 @@ function App() {
                         {unreadBooks.length > 0 ? (
                             <ul className="space-y-6">
                                 {unreadBooks.map((book) => (
-                                    <li key={book.bookId} className="bg-purple-800 p-5 rounded-lg shadow-lg border-2 border-purple-400 transform transition-transform duration-300">
+                                    <li key={book.book_id} className="bg-purple-800 p-5 rounded-lg shadow-lg border-2 border-purple-400 transform transition-transform duration-300">
                                         <h3 className="text-xl font-black text-yellow-300 mb-1">{book.title}</h3>
                                         <p className="text-pink-100 text-sm">著者: {book.author}</p>
                                         <p className="text-purple-200 text-xs mt-1">期限: {new Date(book.deadline).toLocaleDateString()}</p>
                                         <p className={`text-sm font-black mt-2 uppercase ${book.status === "insulted" ? "text-red-400 animate-pulse" : "text-yellow-300"}`}>ステータス: {book.status === "unread" ? "未読" : book.status === "reading" ? "読書中" : book.status === "completed" ? "読了済" : "煽られ中"}</p>
                                         <div className="flex flex-wrap gap-2 mt-4">
-                                            <button onClick={() => handleCompleteClick(book.bookId)} className="bg-gradient-to-r from-green-400 to-blue-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">読了！天才じゃん！✌️</button>
+                                            <button onClick={() => handleCompleteClick(book.book_id)} className="bg-gradient-to-r from-green-400 to-blue-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">読了！天才じゃん！✌️</button>
                                             <button onClick={() => handleEditClick(book)} className="bg-yellow-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">編集✨</button>
-                                            <button onClick={() => handleDeleteClick(book.bookId)} className="bg-red-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">削除🥺</button>
+                                            <button onClick={() => handleDeleteClick(book.book_id)} className="bg-red-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">削除🥺</button>
                                         </div>
                                     </li>
                                 ))}
@@ -288,13 +288,13 @@ function App() {
                         {completedBooks.length > 0 ? (
                             <ul className="space-y-6">
                                 {completedBooks.map((book) => (
-                                    <li key={book.bookId} className="bg-green-800 p-5 rounded-lg shadow-lg border-2 border-green-400">
+                                    <li key={book.book_id} className="bg-green-800 p-5 rounded-lg shadow-lg border-2 border-green-400">
                                         <h3 className="text-xl font-black text-yellow-300 mb-1">{book.title}</h3>
                                         <p className="text-green-100 text-sm">著者: {book.author}</p>
                                         <p className="text-green-200 text-xs mt-1">読了日: {new Date(book.deadline).toLocaleDateString()}</p>
                                         <div className="flex gap-2 mt-4">
                                             <button onClick={() => handleEditClick(book)} className="bg-yellow-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">編集✨</button>
-                                            <button onClick={() => handleDeleteClick(book.bookId)} className="bg-red-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">削除🥺</button>
+                                            <button onClick={() => handleDeleteClick(book.book_id)} className="bg-red-500 text-white font-black py-2 px-4 rounded-full text-sm shadow-md">削除🥺</button>
                                         </div>
                                     </li>
                                 ))}
