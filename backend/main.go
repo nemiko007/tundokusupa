@@ -182,11 +182,15 @@ func handleGetBooks(w http.ResponseWriter, r *http.Request) {
 func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 	var book Book
 	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+		log.Printf("[ERROR] handleRegisterBook decode error: %v", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("[DEBUG] handleRegisterBook received: %+v", book)
+
 	if book.Title == "" || book.Author == "" || book.UserID == "" {
+		log.Printf("[ERROR] handleRegisterBook missing fields: title=%s, author=%s, userId=%s", book.Title, book.Author, book.UserID)
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
 	}
@@ -204,8 +208,9 @@ func handleRegisterBook(w http.ResponseWriter, r *http.Request) {
 		"insult_level": book.InsultLevel,
 	}
 
-	_, _, err := supabaseClient.From("books").Insert(insertData, false, "", "", "").Execute()
+	rawResp, _, err := supabaseClient.From("books").Insert(insertData, false, "", "", "").Execute()
 	if err != nil {
+		log.Printf("[ERROR] handleRegisterBook database error: %v, body: %s", err, string(rawResp))
 		http.Error(w, fmt.Sprintf("failed to register book: %v", err), http.StatusInternalServerError)
 		return
 	}
