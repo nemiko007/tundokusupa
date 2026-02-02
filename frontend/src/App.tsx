@@ -73,7 +73,12 @@ function App() {
                 });
 
                 if (!authResponse.ok) {
-                    throw new Error("Backend authentication failed.");
+                    const errorText = await authResponse.text();
+                    console.error("Backend auth error details:", {
+                        status: authResponse.status,
+                        body: errorText
+                    });
+                    throw new Error(`Backend authentication failed (Status: ${authResponse.status}): ${errorText}`);
                 }
 
                 // 簡易的にLINEのIDをUserIDとして扱う (Supabase Authと非同期な場合)
