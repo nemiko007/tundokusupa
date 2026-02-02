@@ -105,6 +105,7 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 
 	var results []map[string]interface{}
 	json.Unmarshal(resp, &results)
+	log.Printf("[DEBUG] Results from users table: %+v", results)
 
 	var internalID string
 	if len(results) == 0 {
@@ -112,7 +113,7 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 			"line_user_id": req.LineUserID,
 			"display_name": "LINE User",
 		}
-		// Insert returns the inserted record by default in many postgrest configurations
+		log.Printf("[DEBUG] Creating new user: %+v", newUser)
 		insertResp, _, err := supabaseClient.From("users").Insert(newUser, false, "", "", "").Execute()
 		if err != nil {
 			log.Printf("[ERROR] handleLineAuth insert error: %v", err)
@@ -121,13 +122,14 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 		}
 		var insertResults []map[string]interface{}
 		json.Unmarshal(insertResp, &insertResults)
+		log.Printf("[DEBUG] Insert results: %+v", insertResults)
 		if len(insertResults) > 0 {
 			internalID = insertResults[0]["id"].(string)
 		} else {
-			// If insertion didn't return data, fetch it again (safety fallback)
 			fResp, _, _ := supabaseClient.From("users").Select("id", "exact", false).Eq("line_user_id", req.LineUserID).Execute()
 			var fResults []map[string]interface{}
 			json.Unmarshal(fResp, &fResults)
+			log.Printf("[DEBUG] Fallback fetch results: %+v", fResults)
 			if len(fResults) > 0 {
 				internalID = fResults[0]["id"].(string)
 			}
@@ -136,6 +138,7 @@ func handleLineAuth(w http.ResponseWriter, r *http.Request) {
 		internalID = results[0]["id"].(string)
 	}
 
+	log.Printf("[DEBUG] handleLineAuth returning internalID: %s for lineUserID: %s", internalID, req.LineUserID)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Auth successful",
