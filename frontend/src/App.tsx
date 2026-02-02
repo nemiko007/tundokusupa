@@ -81,12 +81,16 @@ function App() {
                     throw new Error(`Backend authentication failed (Status: ${authResponse.status}): ${errorText}`);
                 }
 
-                // 簡易的にLINEのIDをUserIDとして扱う (Supabase Authと非同期な場合)
-                // 本番ではSupabase Authの User ID を使用すべき
-                setSupabaseUser({ uid: profile.userId });
+                const authData = await authResponse.json();
+                console.log("[DEBUG] Auth data received from backend (v1.0.1):", authData);
+
+                // バックエンドから返ってきた内部UUIDをUserIDとして扱う
+                console.log("[DEBUG] Setting supabaseUser.uid to:", authData.userId);
+                setSupabaseUser({ uid: authData.userId });
 
                 // 書籍リスト取得
-                await fetchBooks(profile.userId);
+                console.log("[DEBUG] Fetching books for userId:", authData.userId);
+                await fetchBooks(authData.userId);
             } catch (err: any) {
                 console.error("LIFF/Supabase login error:", err);
                 setError(err.message || "An unexpected error occurred during login.");
