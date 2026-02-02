@@ -252,12 +252,15 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 		UserID string `json:"userId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[ERROR] handleDeleteBook decode error: %v", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
+	log.Printf("[DEBUG] handleDeleteBook received: %+v", req)
 
-	_, _, err := supabaseClient.From("books").Delete("", "").Eq("book_id", req.BookID).Eq("user_id", req.UserID).Execute()
+	rawResp, _, err := supabaseClient.From("books").Delete("", "").Eq("book_id", req.BookID).Eq("user_id", req.UserID).Execute()
 	if err != nil {
+		log.Printf("[ERROR] handleDeleteBook database error: %v, body: %s", err, string(rawResp))
 		http.Error(w, fmt.Sprintf("failed to delete book: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -271,12 +274,15 @@ func handleCompleteBook(w http.ResponseWriter, r *http.Request) {
 		BookID string `json:"bookId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[ERROR] handleCompleteBook decode error: %v", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
+	log.Printf("[DEBUG] handleCompleteBook received: %+v", req)
 
-	_, _, err := supabaseClient.From("books").Update(map[string]interface{}{"status": "completed", "updated_at": time.Now()}, "", "").Eq("book_id", req.BookID).Execute()
+	rawResp, _, err := supabaseClient.From("books").Update(map[string]interface{}{"status": "completed", "updated_at": time.Now()}, "", "").Eq("book_id", req.BookID).Execute()
 	if err != nil {
+		log.Printf("[ERROR] handleCompleteBook database error: %v, body: %s", err, string(rawResp))
 		http.Error(w, fmt.Sprintf("failed to complete book: %v", err), http.StatusInternalServerError)
 		return
 	}
