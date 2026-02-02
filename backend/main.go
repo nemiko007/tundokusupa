@@ -22,15 +22,15 @@ type LineAuthRequest struct {
 
 // Book は書籍データを表す構造体 (Supabase/PostgreSQL用)
 type Book struct {
-	BookID      string    `json:"bookId" db:"book_id"`
-	UserID      string    `json:"userId" db:"user_id"`
+	BookID      string    `json:"book_id" db:"book_id"`
+	UserID      string    `json:"user_id" db:"user_id"`
 	Title       string    `json:"title" db:"title"`
 	Author      string    `json:"author" db:"author"`
 	Deadline    time.Time `json:"deadline" db:"deadline"`
 	Status      string    `json:"status" db:"status"`
-	InsultLevel int       `json:"insultLevel" db:"insult_level"`
-	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
-	UpdatedAt   time.Time `json:"updatedAt" db:"updated_at"`
+	InsultLevel int       `json:"insult_level" db:"insult_level"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 func main() {
@@ -248,8 +248,8 @@ func handleUpdateBook(w http.ResponseWriter, r *http.Request) {
 
 func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		BookID string `json:"bookId"`
-		UserID string `json:"userId"`
+		BookID string `json:"book_id"`
+		UserID string `json:"user_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("[ERROR] handleDeleteBook decode error: %v", err)
@@ -271,7 +271,7 @@ func handleDeleteBook(w http.ResponseWriter, r *http.Request) {
 
 func handleCompleteBook(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		BookID string `json:"bookId"`
+		BookID string `json:"book_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("[ERROR] handleCompleteBook decode error: %v", err)
