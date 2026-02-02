@@ -304,31 +304,50 @@ func handleCheckDeadlines(w http.ResponseWriter, r *http.Request) {
 		Lt("deadline", time.Now().Format(time.RFC3339)).
 		Execute()
 	if err != nil {
+		log.Printf("[ERROR] handleCheckDeadlines query error: %v", err)
 		http.Error(w, fmt.Sprintf("database error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("[DEBUG] handleCheckDeadlines raw response: %s", string(resp))
+
 	var books []Book
-	json.Unmarshal(resp, &books)
+	if err := json.Unmarshal(resp, &books); err != nil {
+		log.Printf("[ERROR] handleCheckDeadlines unmarshal error: %v", err)
+	}
+	log.Printf("[DEBUG] handleCheckDeadlines found %d books in unmarshaled slice", len(books))
 
 	count := 0
 	for _, book := range books {
+		log.Printf("[DEBUG] Processing book: %s (ID: %s) for UserID: %s", book.Title, book.BookID, book.UserID)
 		insultMsg, _ := generateInsult(book)
 
 		uResp, _, err := supabaseClient.From("users").Select("line_user_id", "exact", false).Eq("id", book.UserID).Execute()
-		if err == nil {
-			var users []map[string]interface{}
-			json.Unmarshal(uResp, &users)
-			if len(users) > 0 {
-				lineUserID := users[0]["line_user_id"].(string)
-				if err := sendLineMessage(lineUserID, insultMsg); err == nil {
-					supabaseClient.From("books").Update(map[string]interface{}{"status": "insulted"}, "", "").Eq("book_id", book.BookID).Execute()
-					count++
-				}
+		if err != nil {
+			log.Printf("[ERROR] Failed to fetch user %s: %v", book.UserID, err)
+			continue
+		}
+
+		var users []map[string]interface{}
+		json.Unmarshal(uResp, &users)
+		log.Printf("[DEBUG] User query result for %s: %+v", book.UserID, users)
+
+		if len(users) > 0 {
+			lineUserID := users[0]["line_user_id"].(string)
+			log.Printf("[DEBUG] Sending LINE message to %s: %s", lineUserID, insultMsg)
+			if err := sendLineMessage(lineUserID, insultMsg); err == nil {
+				log.Printf("[DEBUG] Message sent. Updating book %s to status 'insulted'", book.BookID)
+				supabaseClient.From("books").Update(map[string]interface{}{"status": "insulted"}, "", "").Eq("book_id", book.BookID).Execute()
+				count++
+			} else {
+				log.Printf("[ERROR] Failed to send LINE message: %v", err)
 			}
+		} else {
+			log.Printf("[WARNING] User %s not found in users table", book.UserID)
 		}
 	}
 
+	log.Printf("[INFO] handleCheckDeadlines completed. Found %d books, processed %d success messages.", len(books), count)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": fmt.Sprintf("Checked deadlines. Found %d expired books.", count)})
 }
