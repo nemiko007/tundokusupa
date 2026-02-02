@@ -20,7 +20,7 @@ interface Book {
     bookId: string;
 }
 
-const BACKEND_URL = "https://tundoku-killer.onrender.com"; // 必要に応じて環境変数化
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://tundoku-killer.onrender.com"; // 必要に応じて環境変数化
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
